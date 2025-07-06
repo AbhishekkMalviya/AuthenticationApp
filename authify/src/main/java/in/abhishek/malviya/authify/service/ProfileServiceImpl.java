@@ -5,7 +5,9 @@ import in.abhishek.malviya.authify.io.ProfileRequest;
 import in.abhishek.malviya.authify.io.ProfileResponse;
 import in.abhishek.malviya.authify.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.UUID;
 
@@ -14,15 +16,19 @@ import java.util.UUID;
 public class ProfileServiceImpl implements ProfileService {
 
    private final UserRepository userRepository;
-    public ProfileServiceImpl(UserRepository userRepository) {
-        this.userRepository = userRepository;
-    }
+//    public ProfileServiceImpl(UserRepository userRepository) {
+//        this.userRepository = userRepository;
+//    }
 
     @Override
     public ProfileResponse createProfile(ProfileRequest request) {
         UserEntity newProfile = convertToUserEntity(request);
-        newProfile = userRepository.save(newProfile);
-        return convertToProfileResponse(newProfile);
+
+        if(!userRepository.existsByEmail(request.getEmail())){
+            newProfile = userRepository.save(newProfile);
+            return convertToProfileResponse(newProfile);
+        }
+        throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already Exists.");
     }
 
     private ProfileResponse convertToProfileResponse(UserEntity newProfile) {
@@ -42,7 +48,7 @@ public class ProfileServiceImpl implements ProfileService {
                 .name(request.getName())
                 .password(request.getPassword())
                 .isAccountVerified(false)
-                .resetOtpExpire(0L)
+                //.resetOtpExpire(0L)
                 .verifyOtp(null)
                 .verifyOtpExpireAt(0L)
                 .resetOtp(null)
